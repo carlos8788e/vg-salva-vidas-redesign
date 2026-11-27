@@ -1,12 +1,44 @@
 import { ArrowRight, UserRoundPlus } from "lucide-react";
-import type { FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import type { NoticeHandler } from "../module-primitives";
 import { ModuleHeading, PreviewNotice, SectionCard } from "../module-primitives";
 
 export function PatientIntakeModule({ onNotify }: { onNotify: NoticeHandler }) {
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const [busy, setBusy] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    onNotify("Nada foi salvo. A gravação está bloqueada até a ativação do login seguro.");
+    const form = event.currentTarget;
+    setBusy(true);
+    const fields = new FormData(form);
+    const payload = {
+      full_name: fields.get("fullName"),
+      date_of_birth: fields.get("dateOfBirth"),
+      sex: fields.get("sex") || null,
+      document_type: fields.get("documentType") || null,
+      document_number: fields.get("documentNumber") || null,
+      mother_name: fields.get("motherName") || null,
+      marital_status: fields.get("maritalStatus") || null,
+      phone: fields.get("phone") || null,
+      email: fields.get("email") || null,
+      address: fields.get("address") || null,
+      emergency_contact_name: fields.get("emergencyContactName") || null,
+      emergency_contact_phone: fields.get("emergencyContactPhone") || null,
+      emergency_relationship: fields.get("emergencyRelationship") || null,
+      payment_type: fields.get("paymentType") || null,
+    };
+    const response = await fetch("/api/registrations", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+    }).catch(() => null);
+    const result = await response?.json().catch(() => null);
+    if (!response?.ok) {
+      onNotify(result?.error ?? "Não foi possível salvar o cadastro.");
+      setBusy(false);
+      return;
+    }
+    form.reset();
+    onNotify("Cadastro salvo. O paciente já pode ser localizado para internação.");
+    setBusy(false);
   }
 
   return (
@@ -15,11 +47,11 @@ export function PatientIntakeModule({ onNotify }: { onNotify: NoticeHandler }) {
         eyebrow="Recepção"
         title="Novo atendimento"
         description="Registre a identificação do paciente e prepare o encaminhamento para triagem."
-        actions={<span className="status-chip status-chip--pending">Prévia sem gravação</span>}
+        actions={<span className="status-chip status-chip--active">Cadastro conectado</span>}
       />
 
       <PreviewNotice>
-        Não use dados reais de pacientes nesta tela. O formulário é apenas visual e não envia nem persiste informações.
+        As informações são gravadas no cadastro hospitalar e só ficam visíveis à equipe após autenticação.
       </PreviewNotice>
 
       <SectionCard
@@ -127,9 +159,9 @@ export function PatientIntakeModule({ onNotify }: { onNotify: NoticeHandler }) {
           </div>
 
           <div className="form-actions">
-            <p>O envio está desativado até que a autenticação segura esteja configurada.</p>
-            <button type="submit" className="button button-primary">
-              Pré-visualizar envio
+            <p>O acesso à recepção exige uma sessão médica ativa.</p>
+            <button type="submit" className="button button-primary" disabled={busy}>
+              {busy ? "Salvando…" : "Salvar cadastro"}
               <ArrowRight aria-hidden="true" size={16} />
             </button>
           </div>

@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.119.2",
+    "@vercel/functions": "^3.11.4",
     "ai": "^7.0.183",
     "better-auth": "^1.7.28",
     "drizzle-orm": "^0.45.4",
