@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, HeartPulse, Send } from "lucide-react";
 
@@ -8,6 +8,13 @@ export function PatientRegistrationForm() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const birthDateInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (birthDateInputRef.current) {
+      birthDateInputRef.current.max = new Date().toISOString().slice(0, 10);
+    }
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -60,7 +67,7 @@ export function PatientRegistrationForm() {
           <div className="form-section-label"><div><strong>Identificação</strong><span>Campos marcados com * são obrigatórios.</span></div></div>
           <div className="form-grid form-grid--two">
             <div className="field field--wide"><label htmlFor="public-full-name">Nome completo <span aria-hidden="true">*</span></label><input id="public-full-name" name="full_name" autoComplete="name" maxLength={150} required /></div>
-            <div className="field"><label htmlFor="public-birth">Data de nascimento <span aria-hidden="true">*</span></label><input id="public-birth" name="date_of_birth" type="date" autoComplete="bday" max={new Date().toISOString().slice(0, 10)} required /></div>
+            <div className="field"><label htmlFor="public-birth">Data de nascimento <span aria-hidden="true">*</span></label><input ref={birthDateInputRef} id="public-birth" name="date_of_birth" type="date" autoComplete="bday" required /></div>
             <div className="field"><label htmlFor="public-sex">Sexo</label><select id="public-sex" name="sex" defaultValue=""><option value="">Prefiro não informar</option><option value="feminino">Feminino</option><option value="masculino">Masculino</option><option value="outro">Outro</option><option value="nao-informado">Prefiro não informar</option></select></div>
             <div className="field"><label htmlFor="public-doc-type">Documento</label><select id="public-doc-type" name="document_type" defaultValue=""><option value="">Selecione</option><option value="cpf">CPF</option><option value="rg">RG</option><option value="cns">Cartão SUS</option></select></div>
             <div className="field"><label htmlFor="public-doc-number">Número do documento</label><input id="public-doc-number" name="document_number" autoComplete="off" maxLength={40} /></div>
