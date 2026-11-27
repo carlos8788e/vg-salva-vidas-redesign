@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bell, ChevronRight, LogOut, Search, ShieldCheck } from "lucide-react";
 import { NAV_ITEMS, Sidebar } from "./sidebar";
 import type { ModuleKey } from "./module-primitives";
@@ -21,6 +21,16 @@ export function HospitalApp({ clinicianEmail, initiallyAuthenticated }: { clinic
   const [loggingOut, setLoggingOut] = useState(false);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeItem = NAV_ITEMS.find((item) => item.id === activeModule);
+
+  useEffect(() => {
+    function handleUnauthorized() {
+      setAuthenticated(false);
+      void createClient().auth.signOut();
+    }
+
+    window.addEventListener("clinical:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("clinical:unauthorized", handleUnauthorized);
+  }, []);
 
   function showNotice(message: string) {
     setNotice(message);

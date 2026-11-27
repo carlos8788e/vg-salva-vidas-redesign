@@ -25,8 +25,13 @@ type Admission = {
 };
 type ApiResult<T> = { [key: string]: T[] };
 
+function notifyUnauthorized(response: Response) {
+  if (response.status === 401) window.dispatchEvent(new Event("clinical:unauthorized"));
+}
+
 async function fetcher<T>(url: string): Promise<T> {
   const response = await fetch(url, { credentials: "same-origin" });
+  notifyUnauthorized(response);
   const result = await response.json();
   if (!response.ok) throw new Error(result.error ?? "Não foi possível carregar os dados.");
   return result;
@@ -58,6 +63,7 @@ export function AdmissionsModule({ onNavigate }: { onNavigate: (module: ModuleKe
     const response = await fetch("/api/clinical/admissions", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
     }).catch(() => null);
+    if (response) notifyUnauthorized(response);
     const result = await response?.json().catch(() => null);
     if (!response?.ok) {
       setMessage(result?.error ?? "Não foi possível registrar a internação.");
@@ -79,6 +85,7 @@ export function AdmissionsModule({ onNavigate }: { onNavigate: (module: ModuleKe
     const response = await fetch(`/api/clinical/admissions/${discharging.id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values),
     }).catch(() => null);
+    if (response) notifyUnauthorized(response);
     const result = await response?.json().catch(() => null);
     if (!response?.ok) {
       setMessage(result?.error ?? "Não foi possível registrar a alta.");

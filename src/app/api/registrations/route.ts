@@ -1,10 +1,15 @@
+import { createHmac } from "node:crypto";
+import { ipAddress } from "@vercel/functions";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const registrationSchema = z.object({
   full_name: z.string().trim().min(2).max(150),
-  date_of_birth: z.string().date(),
+  date_of_birth: z.string().date().refine((value) => value <= new Date().toISOString().slice(0, 10), {
+    message: "A data de nascimento não pode ser futura.",
+  }),
   sex: z.enum(["feminino", "masculino", "outro", "nao-informado"]).nullable().optional(),
   document_type: z.enum(["cpf", "rg", "cns"]).nullable().optional(),
   document_number: z.string().trim().max(40).nullable().optional(),
@@ -20,6 +25,30 @@ const registrationSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const hmacKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!hmacKey) {
+    return NextResponse.json({ error: "Cadastro temporariamente indisponível." }, { status: 503 });
+  }
+
+  const clientIp = ipAddress(request) ?? "unknown";
+  const ipHash = createHmac("sha256", hmacKey).update(clientIp).digest("hex");
+  let allowed: boolean;
+  try {
+    const { data, error } = await createAdminClient().rpc("allow_patient_registration", {
+      p_ip_hash: ipHash,
+    });
+    if (error || typeof data !== "boolean") {
+      return NextResponse.json({ error: "Cadastro temporariamente indisponível." }, { status: 503 });
+    }
+    allowed = data;
+  } catch {
+    return NextResponse.json({ error: "Cadastro temporariamente indisponível." }, { status: 503 });
+  }
+
+  if (!allowed) {
+    return NextResponse.json({ error: "Limite de cadastros atingido. Tente novamente mais tarde." }, { status: 429 });
+  }
+
   const rawBody = await request.json().catch(() => null);
   const normalizedBody = rawBody && typeof rawBody === "object" && !Array.isArray(rawBody)
     ? Object.fromEntries(Object.entries(rawBody).map(([key, value]) => [key, value === "" ? null : value]))
