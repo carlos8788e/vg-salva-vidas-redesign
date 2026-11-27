@@ -30,6 +30,31 @@ export function DoctorLogin({ clinicianEmail, onAuthenticated }: { clinicianEmai
     onAuthenticated();
   }
 
+  async function requestPasswordReset() {
+    if (!clinicianEmail) {
+      setMessage("O e-mail autorizado da equipe ainda não foi configurado.");
+      return;
+    }
+
+    setBusy(true);
+    setMessage("");
+    try {
+      const redirectTo = new URL(
+        process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ?? `${window.location.origin}/auth/callback`,
+      );
+      redirectTo.searchParams.set("next", "/auth/reset-password");
+      const { error } = await createClient().auth.resetPasswordForEmail(clinicianEmail, {
+        redirectTo: redirectTo.toString(),
+      });
+      if (error) throw error;
+      setMessage("Se a conta puder redefinir a senha, enviaremos um link para o e-mail autorizado.");
+    } catch {
+      setMessage("Não foi possível solicitar a redefinição agora. Tente novamente mais tarde.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function activateAccount() {
     if (!clinicianEmail) {
       setMessage("O e-mail autorizado da equipe ainda não foi configurado.");
@@ -58,11 +83,12 @@ export function DoctorLogin({ clinicianEmail, onAuthenticated }: { clinicianEmai
         <p className="auth-eyebrow">VG Salva Vidas · Acesso clínico</p>
         <h1 id="doctor-login-title">Bem-vindo de volta</h1>
         <p className="auth-intro">Entre no painel seguro da equipe médica.</p>
-        <div className="auth-account-pill"><span>Usuário</span><strong>medico</strong></div>
+        <div className="auth-account-pill"><span>E-mail médico autorizado</span><strong>{clinicianEmail || "Não configurado"}</strong></div>
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="field"><label htmlFor="doctor-password">Senha</label><div className="auth-input-wrap"><LockKeyhole aria-hidden="true" size={17} /><input id="doctor-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={8} required placeholder="Sua senha segura" /></div></div>
           {message ? <p className="auth-message" role="status">{message}</p> : null}
           <button type="submit" className="button button-primary auth-submit" disabled={busy}>{busy ? "Verificando…" : "Entrar no sistema"}<ArrowRight aria-hidden="true" size={17} /></button>
+          <button type="button" className="auth-link-button" onClick={requestPasswordReset} disabled={busy || !clinicianEmail}>Esqueci minha senha</button>
           <button type="button" className="auth-link-button" onClick={activateAccount} disabled={busy || password.length < 8}>Ativar a conta médica pela primeira vez</button>
         </form>
         <div className="auth-security-note"><ShieldCheck aria-hidden="true" size={16} /><span>Acesso restrito ao e-mail médico autorizado e protegido pelo Supabase.</span></div>
