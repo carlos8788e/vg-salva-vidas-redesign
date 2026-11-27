@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Bell, ChevronRight, Search, ShieldCheck } from "lucide-react";
+import { Bell, ChevronRight, LogOut, Search, ShieldCheck } from "lucide-react";
 import { NAV_ITEMS, Sidebar } from "./sidebar";
 import type { ModuleKey } from "./module-primitives";
 import { OverviewModule } from "./modules/overview";
@@ -11,10 +11,14 @@ import { ConsultationModule } from "./modules/consultation";
 import { AdmissionsModule } from "./modules/admissions";
 import { MedicationsModule } from "./modules/medications";
 import { TvDisplayModule } from "./modules/tv-display";
+import { DoctorLogin } from "./auth/doctor-login";
+import { createClient } from "@/lib/supabase/client";
 
-export function HospitalApp() {
+export function HospitalApp({ clinicianEmail, initiallyAuthenticated }: { clinicianEmail: string; initiallyAuthenticated: boolean }) {
   const [activeModule, setActiveModule] = useState<ModuleKey>("overview");
   const [notice, setNotice] = useState("");
+  const [authenticated, setAuthenticated] = useState(initiallyAuthenticated);
+  const [loggingOut, setLoggingOut] = useState(false);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeItem = NAV_ITEMS.find((item) => item.id === activeModule);
 
@@ -29,34 +33,29 @@ export function HospitalApp() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  async function signOut() {
+    setLoggingOut(true);
+    await createClient().auth.signOut();
+    setAuthenticated(false);
+    setActiveModule("overview");
+    setLoggingOut(false);
+  }
+
   function renderActiveModule() {
     switch (activeModule) {
-      case "registration":
-        return <PatientIntakeModule onNotify={showNotice} />;
-      case "triage":
-        return <TriageModule onNotify={showNotice} />;
-      case "medical":
-        return (
-          <ConsultationModule
-            onNotify={showNotice}
-            onNavigate={navigateTo}
-          />
-        );
-      case "admissions":
-        return <AdmissionsModule onNavigate={navigateTo} />;
-      case "medications":
-        return <MedicationsModule onNavigate={navigateTo} />;
-      case "tv":
-        return <TvDisplayModule onNotify={showNotice} />;
+      case "registration": return <PatientIntakeModule onNotify={showNotice} />;
+      case "triage": return <TriageModule onNotify={showNotice} />;
+      case "medical": return <ConsultationModule onNotify={showNotice} onNavigate={navigateTo} />;
+      case "admissions": return <AdmissionsModule onNavigate={navigateTo} />;
+      case "medications": return <MedicationsModule onNavigate={navigateTo} />;
+      case "tv": return <TvDisplayModule onNotify={showNotice} />;
       case "overview":
-      default:
-        return (
-          <OverviewModule
-            onNavigate={navigateTo}
-            onNotify={showNotice}
-          />
-        );
+      default: return <OverviewModule onNavigate={navigateTo} onNotify={showNotice} />;
     }
+  }
+
+  if (!authenticated) {
+    return <DoctorLogin clinicianEmail={clinicianEmail} onAuthenticated={() => setAuthenticated(true)} />;
   }
 
   return (
@@ -64,49 +63,20 @@ export function HospitalApp() {
       <Sidebar activeModule={activeModule} onSelect={navigateTo} />
       <div className="app-main-column">
         <header className="app-topbar">
-          <div className="topbar-breadcrumb">
-            <span>VG Salva Vidas</span>
-            <ChevronRight aria-hidden="true" size={15} />
-            <strong>{activeItem?.label ?? "Visão geral"}</strong>
-          </div>
+          <div className="topbar-breadcrumb"><span>VG Salva Vidas</span><ChevronRight aria-hidden="true" size={15} /><strong>{activeItem?.label ?? "Visão geral"}</strong></div>
           <div className="topbar-tools">
-            <label className="topbar-search">
-              <Search aria-hidden="true" size={16} />
-              <input
-                type="search"
-                placeholder="Busca disponível após conexão segura"
-                aria-label="Busca indisponível nesta prévia"
-                disabled
-              />
-            </label>
-            <span className="topbar-preview-pill">
-              <ShieldCheck aria-hidden="true" size={15} />
-              Prévia segura
-            </span>
-            <button
-              type="button"
-              className="icon-button topbar-notifications"
-              aria-label="Informações sobre notificações"
-              onClick={() =>
-                showNotice("Notificações serão ativadas com a conexão segura do sistema.")
-              }
-            >
-              <Bell aria-hidden="true" size={18} />
-            </button>
+            <label className="topbar-search"><Search aria-hidden="true" size={16} /><input type="search" placeholder="Busca disponível após conexão segura" aria-label="Busca indisponível nesta versão" disabled /></label>
+            <span className="topbar-preview-pill"><ShieldCheck aria-hidden="true" size={15} /> Sessão protegida</span>
+            <button type="button" className="icon-button topbar-notifications" aria-label="Informações sobre notificações" onClick={() => showNotice("Notificações ainda não estão configuradas.")}><Bell aria-hidden="true" size={18} /></button>
+            <button type="button" className="icon-button" aria-label="Sair da conta médica" title="Sair" disabled={loggingOut} onClick={signOut}><LogOut aria-hidden="true" size={17} /></button>
           </div>
         </header>
-
         <main id="main-content" className="app-content">
           {renderActiveModule()}
-          <footer className="app-footer">
-            <span>VG Salva Vidas</span>
-            <span>Prévia de interface · Sem dados clínicos conectados</span>
-          </footer>
+          <footer className="app-footer"><span>VG Salva Vidas</span><span>Acesso clínico · Sessão autenticada</span></footer>
         </main>
       </div>
-      <div className="live-notice" role="status" aria-live="polite">
-        {notice ? <span>{notice}</span> : null}
-      </div>
+      <div className="live-notice" role="status" aria-live="polite">{notice ? <span>{notice}</span> : null}</div>
     </div>
   );
 }

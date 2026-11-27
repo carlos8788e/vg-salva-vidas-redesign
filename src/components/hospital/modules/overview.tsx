@@ -66,7 +66,7 @@ export function OverviewModule({
       />
 
       <PreviewNotice>
-        Prévia visual sem conexão com prontuários. Não insira dados reais até que o login e a persistência segura estejam ativos.
+        Cadastro e internações estão conectados ao ambiente seguro. Os prontuários completos permanecem disponíveis somente à equipe autenticada.
       </PreviewNotice>
 
       <section className="welcome-panel" aria-labelledby="welcome-title">
@@ -105,7 +105,7 @@ export function OverviewModule({
         </div>
         <div className="welcome-security">
           <LockKeyhole aria-hidden="true" size={15} />
-          <span>Dados clínicos bloqueados nesta prévia</span>
+          <span>Acesso clínico autenticado</span>
         </div>
       </section>
 
@@ -181,21 +181,21 @@ export function OverviewModule({
       </div>
 
       <SectionCard
-        title="Status do ambiente"
-        description="O banco contém as estruturas de atendimento, mas o acesso a dados clínicos permanece fechado nesta prévia."
+        title="Ambiente clínico"
+        description="Os registros são protegidos por autenticação médica e políticas de acesso do Supabase."
         className="environment-card"
-        actions={<span className="status-chip status-chip--pending">Configuração pendente</span>}
+        actions={<span className="status-chip status-chip--active">Conectado</span>}
       >
         <div className="environment-status">
           <span className="environment-status-icon"><LockKeyhole aria-hidden="true" size={18} /></span>
           <div>
-            <strong>Autenticação segura necessária</strong>
-            <p>Filas, prontuários e relatórios só serão consultados após a configuração adequada do segredo de sessão.</p>
+            <strong>Dados restritos à equipe autorizada</strong>
+            <p>Cadastros de pacientes, internações e altas são consultados no servidor após validar a sessão médica.</p>
           </div>
           <button
             type="button"
             className="text-action"
-            onClick={() => onNotify("Nenhum dado foi consultado ou salvo nesta prévia.")}
+            onClick={() => onNotify("A sessão médica está ativa e os dados clínicos permanecem protegidos.")}
           >
             Entendi
             <ArrowRight aria-hidden="true" size={15} />

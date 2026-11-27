@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "./auth-screens.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "VG Salva Vidas | Gestão hospitalar",
   description:
-    "Painel de gestão hospitalar para organizar atendimento, triagem, internações, prescrições e chamadas.",
+    "Plataforma segura de gestão hospitalar VG Salva Vidas para cadastro de pacientes, atendimento, internações e altas.",
 };
 
 export const viewport: Viewport = {
