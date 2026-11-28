@@ -2165,28 +2165,6 @@ textarea:focus-visible {
   line-height: 1.6;
 }
 
-.auth-account-pill {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 24px;
-  padding: 11px 13px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: #f8fbfa;
-}
-
-.auth-account-pill span {
-  color: var(--muted);
-  font-size: 10px;
-}
-
-.auth-account-pill strong {
-  color: var(--navy);
-  font-size: 12px;
-  font-weight: 650;
-}
-
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -2227,7 +2205,6 @@ textarea:focus-visible {
   padding: 0 14px;
 }
 
-.auth-link-button,
 .auth-public-link,
 .patient-back-link {
   display: inline-flex;
@@ -2240,16 +2217,6 @@ textarea:focus-visible {
   font-size: 10px;
   font-weight: 620;
   text-decoration: none;
-}
-
-.auth-link-button {
-  justify-content: center;
-  padding: 7px;
-}
-
-.auth-link-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
 }
 
 .auth-message,
