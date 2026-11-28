@@ -1,79 +1,55 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { Activity, ArrowRight, LockKeyhole, ShieldCheck } from "lucide-react";
+import { Activity, ArrowRight, Eye, EyeOff, LockKeyhole, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export function DoctorLogin({ clinicianEmail, onAuthenticated }: { clinicianEmail: string; onAuthenticated: () => void }) {
   const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!clinicianEmail) {
-      setMessage("O e-mail autorizado da equipe ainda não foi configurado.");
-      return;
-    }
-    setBusy(true);
-    setMessage("");
-    const supabase = createClient();
-    const { data, error } = await supabase.auth.signInWithPassword({ email: clinicianEmail, password });
-    if (error || data.user?.email?.toLowerCase() !== clinicianEmail.toLowerCase()) {
-      if (data.session) await supabase.auth.signOut();
-      setMessage(error?.message.toLowerCase().includes("confirm") ? "Confirme o e-mail da conta médica antes de entrar." : "Não foi possível entrar. Confira a senha e tente novamente.");
-      setBusy(false);
-      return;
-    }
-    setBusy(false);
-    onAuthenticated();
-  }
-
-  async function requestPasswordReset() {
-    if (!clinicianEmail) {
-      setMessage("O e-mail autorizado da equipe ainda não foi configurado.");
+      setMessage("O acesso médico ainda não está configurado.");
       return;
     }
 
     setBusy(true);
     setMessage("");
     try {
-      const redirectTo = new URL(
-        process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ?? `${window.location.origin}/auth/callback`,
-      );
-      redirectTo.searchParams.set("next", "/auth/reset-password");
-      const { error } = await createClient().auth.resetPasswordForEmail(clinicianEmail, {
-        redirectTo: redirectTo.toString(),
-      });
-      if (error) throw error;
-      setMessage("Se a conta puder redefinir a senha, enviaremos um link para o e-mail autorizado.");
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signInWithPassword({ email: clinicianEmail, password });
+
+      if (error) {
+        const needsConfirmation = error.code === "email_not_confirmed" || error.message.toLowerCase().includes("confirm");
+        if (needsConfirmation) {
+          setMessage("A conta médica ainda precisa de liberação pelo administrador do sistema.");
+        } else if (error.status === 429 || error.code === "over_request_rate_limit") {
+          setMessage("Houve muitas tentativas. Aguarde um pouco antes de tentar novamente.");
+        } else if (error.code === "invalid_credentials") {
+          setMessage("Senha incorreta. Tente novamente.");
+        } else {
+          setMessage("Não foi possível conectar ao acesso clínico. Verifique sua conexão e tente novamente.");
+        }
+        return;
+      }
+
+      if (data.user?.email?.toLowerCase() !== clinicianEmail.toLowerCase()) {
+        if (data.session) await supabase.auth.signOut();
+        setMessage("Esta conta não corresponde ao e-mail médico autorizado.");
+        return;
+      }
+
+      onAuthenticated();
     } catch {
-      setMessage("Não foi possível solicitar a redefinição agora. Tente novamente mais tarde.");
+      setMessage("Não foi possível conectar ao acesso clínico. Verifique sua conexão e tente novamente.");
     } finally {
       setBusy(false);
     }
-  }
-
-  async function activateAccount() {
-    if (!clinicianEmail) {
-      setMessage("O e-mail autorizado da equipe ainda não foi configurado.");
-      return;
-    }
-    setBusy(true);
-    setMessage("");
-    const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
-      email: clinicianEmail,
-      password,
-      options: { emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ?? `${window.location.origin}/auth/callback` },
-    });
-    if (error) {
-      setMessage(error.code === "weak_password" ? "Escolha uma senha forte, com pelo menos 8 caracteres." : error.status === 429 ? "Muitas tentativas. Aguarde um pouco e tente novamente." : "Não foi possível ativar a conta. Confira a senha e tente novamente.");
-    } else {
-      setMessage("Enviamos um link de confirmação para o e-mail médico autorizado.");
-    }
-    setBusy(false);
   }
 
   return (
@@ -82,16 +58,23 @@ export function DoctorLogin({ clinicianEmail, onAuthenticated }: { clinicianEmai
         <div className="auth-brand-mark" aria-hidden="true"><Activity size={28} /></div>
         <p className="auth-eyebrow">VG Salva Vidas · Acesso clínico</p>
         <h1 id="doctor-login-title">Bem-vindo de volta</h1>
-        <p className="auth-intro">Entre no painel seguro da equipe médica.</p>
-        <div className="auth-account-pill"><span>E-mail médico autorizado</span><strong>{clinicianEmail || "Não configurado"}</strong></div>
+        <p className="auth-intro">Acesse o painel médico com sua senha.</p>
         <form className="auth-form" onSubmit={handleSubmit}>
-          <div className="field"><label htmlFor="doctor-password">Senha</label><div className="auth-input-wrap"><LockKeyhole aria-hidden="true" size={17} /><input id="doctor-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={8} required placeholder="Sua senha segura" /></div></div>
-          {message ? <p className="auth-message" role="status">{message}</p> : null}
+          <div className="field">
+            <label htmlFor="doctor-password">Senha</label>
+            <div className="auth-input-wrap">
+              <LockKeyhole aria-hidden="true" size={17} />
+              <input id="doctor-password" type={passwordVisible ? "text" : "password"} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required placeholder="Digite sua senha" />
+              <button type="button" className="auth-password-toggle" aria-label={passwordVisible ? "Ocultar senha" : "Mostrar senha"} aria-pressed={passwordVisible} onClick={() => setPasswordVisible((visible) => !visible)} disabled={busy}>
+                {passwordVisible ? <EyeOff aria-hidden="true" size={17} /> : <Eye aria-hidden="true" size={17} />}
+              </button>
+            </div>
+            <p className="auth-password-guidance">Use sua senha individual. Não a compartilhe.</p>
+          </div>
+          {message ? <p className="auth-message" role="status" aria-live="polite">{message}</p> : null}
           <button type="submit" className="button button-primary auth-submit" disabled={busy}>{busy ? "Verificando…" : "Entrar no sistema"}<ArrowRight aria-hidden="true" size={17} /></button>
-          <button type="button" className="auth-link-button" onClick={requestPasswordReset} disabled={busy || !clinicianEmail}>Esqueci minha senha</button>
-          <button type="button" className="auth-link-button" onClick={activateAccount} disabled={busy || password.length < 8}>Ativar a conta médica pela primeira vez</button>
         </form>
-        <div className="auth-security-note"><ShieldCheck aria-hidden="true" size={16} /><span>Acesso restrito ao e-mail médico autorizado e protegido pelo Supabase.</span></div>
+        <div className="auth-security-note"><ShieldCheck aria-hidden="true" size={16} /><span>Acesso clínico individual protegido pelo Supabase.</span></div>
         <Link className="auth-public-link" href="/cadastro">Sou paciente — fazer cadastro</Link>
       </section>
     </main>

@@ -9,6 +9,10 @@
   background: radial-gradient(ellipse at 50% 0%, #e4f1ed 0%, var(--canvas) 53%);
 }
 
+.auth-screen {
+  padding: 24px 18px;
+}
+
 .auth-card,
 .patient-registration-card {
   width: min(100%, 450px);
@@ -17,6 +21,10 @@
   border-radius: 20px;
   background: var(--surface);
   box-shadow: 0 18px 60px rgb(16 43 58 / 8%);
+}
+
+.auth-card {
+  padding: 26px;
 }
 
 .auth-brand-mark {
@@ -47,6 +55,10 @@
   letter-spacing: -0.045em;
 }
 
+.auth-card > .auth-eyebrow {
+  margin: 16px 0 6px;
+}
+
 .auth-intro,
 .patient-form-heading > p:last-child,
 .patient-success > p:not(.auth-eyebrow) {
@@ -56,26 +68,8 @@
   line-height: 1.6;
 }
 
-.auth-account-pill {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 24px;
-  padding: 11px 13px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: #f8fbfa;
-}
-
-.auth-account-pill span {
-  color: var(--muted);
-  font-size: 10px;
-}
-
-.auth-account-pill strong {
-  color: var(--navy);
-  font-size: 12px;
-  font-weight: 650;
+.auth-card .auth-intro {
+  margin: 6px 0 0;
 }
 
 .auth-form {
@@ -83,6 +77,11 @@
   flex-direction: column;
   gap: 15px;
   margin-top: 20px;
+}
+
+.auth-card .auth-form {
+  gap: 11px;
+  margin-top: 16px;
 }
 
 .auth-input-wrap {
@@ -102,6 +101,7 @@
 }
 
 .auth-input-wrap input {
+  flex: 1;
   width: 100%;
   min-width: 0;
   border: 0;
@@ -111,6 +111,37 @@
   font-size: 12px;
 }
 
+.auth-password-toggle {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.auth-password-toggle:hover {
+  background: var(--mint);
+  color: var(--teal);
+}
+
+.auth-password-toggle:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.auth-password-guidance {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
 .auth-submit {
   width: 100%;
   min-height: 43px;
@@ -118,7 +149,6 @@
   padding: 0 14px;
 }
 
-.auth-link-button,
 .auth-public-link,
 .patient-back-link {
   display: inline-flex;
@@ -131,16 +161,6 @@
   font-size: 10px;
   font-weight: 620;
   text-decoration: none;
-}
-
-.auth-link-button {
-  justify-content: center;
-  padding: 7px;
-}
-
-.auth-link-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
 }
 
 .auth-message {
@@ -164,8 +184,8 @@
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  margin-top: 20px;
-  padding-top: 16px;
+  margin-top: 14px;
+  padding-top: 12px;
   border-top: 1px solid #edf1f0;
   color: #71838b;
   font-size: 9px;
@@ -178,7 +198,7 @@
 }
 
 .auth-public-link {
-  margin-top: 18px;
+  margin-top: 12px;
 }
 
 .patient-registration-screen {
